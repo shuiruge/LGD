@@ -15,6 +15,9 @@ wherein the hyper-parameter `a` (momentum) and `b` (learning-rate) are fixed. Bu
 
 ### Algorithm
 
+    # Parameter
+    N_SUB_TRAINS = ...
+
     # Variables
     E = Variable(..., trainable=False)  # "environment".
     x = Variable(..., trainable=False)
@@ -38,9 +41,10 @@ wherein the hyper-parameter `a` (momentum) and `b` (learning-rate) are fixed. Bu
         grad_meta_loss = compute_gradient(meta_loss, w)
         Optimizer.apply_gradient(grad_meta_loss)
 
-        # Upate the non-traiable variables
-        x <- x + delta_x
-        E <- E.append(a, b, ...)
+        if (step+1) % N_SUB_TRAINS == 0:
+            # Upate the non-traiable variables
+            x <- x + delta_x
+            E <- E.append(a, b, ...)
 
 
 
