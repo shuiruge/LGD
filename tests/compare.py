@@ -20,17 +20,23 @@ def main(make_f=make_f, n_dims=n_dims, n_iters=n_iters):
     optimizer = tf.train.RMSPropOptimizer(0.01)
     train_op = optimizer.minimize(f)
     
+    tf.summary.scalar('meta-loss', f)
+    summary_op = tf.summary.merge_all()
+    
     init = tf.global_variables_initializer()
     
     with tf.Session() as sess:
         
-        sess.run(init)
+        writer = tf.summary.FileWriter('../dat/logdir/2', sess.graph)
         
+        sess.run(init)
         time_start = time.time()
         
         for step in range(n_iters):
-            f_val, _ = sess.run([f, train_op])
+            f_val, summary_val, _ = sess.run([f, summary_op, train_op])
             print(step, f_val)
+            
+            writer.add_summary(summary_val, step)
             
             if f_val < 1e-3:
                 break
