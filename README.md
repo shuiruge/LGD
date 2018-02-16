@@ -44,9 +44,46 @@ wherein the hyper-parameter `a` (momentum) and `b` (learning-rate) are fixed. Bu
         if (step+1) % N_SUB_TRAINS == 0:
             # Upate the non-traiable variables
             x <- x + delta_x
-            E <- E.append(a, b, ...)
+            e = (a, b, ...)
+            E <- E.append(e)
 
 
+### Cost
 
+Let `Dx` the dimension of `x`, `Dw` the dimension of `w`, and `Cf` the
+complexity of `f`, and `Cm` of `m`. Within the iteration:
 
+    for step in range(n_iters):
 
+        # Compute the meta-loss
+        f = f(x)  # costs nothing, computed in the previous iteration.
+        grad_f = compute_gradient(f, x)  # Computed in the prevous iteration
+                                         # in `compute_gradient(meta_loss, w)`.
+        a, b = m(E, w)  # Theta of Cm.
+        delta_x = a + b * grad_f  # Theta of Dx.
+        meta_loss = f(x + delta_x)  # Theta of Cf.
+
+        grad_meta_loss = compute_gradient(meta_loss, w)  # Theta of (Cf + Cm
+                                                         # + Dx + Dw)
+        Optimizer.apply_gradient(grad_meta_loss)
+
+        if (step+1) % N_SUB_TRAINS == 0:
+            # Upate the non-traiable variables
+            x <- x + delta_x
+            e = (a, b, ...)
+            E <- E.append(e)
+
+Thus, the total temporal cost is Theta of
+    
+    (2*Cm + 2*Cf + 2*Dx + Dw) * n_iters
+
+while the standard optimization takes Theta of
+
+    2 * Cf * n_iters
+
+So, if `Cf` is much greater than `Cm`, then this method matters.
+
+PS: grad(meta_loss, w)(w) = sum(
+        grad(f, x)(x + delta_x) * ( grad(a, w)(w)
+            + grad(b, w)(w) * grad(f, x)(x) ),
+        x)
