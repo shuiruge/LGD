@@ -24,7 +24,7 @@ wherein the hyper-parameter `a` (momentum) and `b` (learning-rate) are fixed. Bu
     w = Variable(..., trainable=True)  # weights and bias of the model below.
 
     # Model
-    def m(E, w): ...  # maybe an RNN
+    def m(E, w): ...  # maybe a RNN
 
     for step in range(n_iters):
 
@@ -35,7 +35,7 @@ wherein the hyper-parameter `a` (momentum) and `b` (learning-rate) are fixed. Bu
         delta_x = a + b * grad_f
         meta_loss = f(x + delta_x)  # the value of `f` at the next step. If the
                                     # model works well, it shall predict the
-                                    # next step that minimizes this value.
+                                    # next step that minimizes the value of f.
 
         # Update `w` with standard gradient descent optimizer
         grad_meta_loss = compute_gradient(meta_loss, w)
