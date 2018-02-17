@@ -13,6 +13,14 @@ Let `f(x)` a smooth function over Euclidean space, and suppose we are to find th
 wherein the hyper-parameter `a` (momentum) and `b` (learning-rate) are fixed. But now, we are trying to upgrade this, by setting `a` and `b` functions over all the past values of `a`, `b`, and the difference between the adjoint values of `f` along the iteration. We parameterize these unknown functions by neural network, with the utility of its universality. And then train the weights and biases of the neural network by the standard (human-designed) gradient descent algorithm(s).
 
 
+### Related
+
+[Learning-to-learn](https://github.com/deepmind/learning-to-learn) (L2L) inspired this project. However, there are several considerations that motived me moving forward (or backward):
+
+1. Like `AdagradOptimizer` and its variations, L2L deviates the basic idea of gradient descent algorithm, that is, it is just along the inverse direction of gradients that the loss-function decreases fastest.
+1. L2L cannot be be trained while evaluating. This is essential since no optimization algorithm can evaluate sucessfully on all problems, cursed by the "no free lunch" theorem. An optimizer thus shall automatically adjust itself to fit its problem.
+
+
 ### Algorithm
 
     # Parameter
