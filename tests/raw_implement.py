@@ -79,6 +79,7 @@ def main(make_f=make_f, n_dims=n_dims, n_iters=n_iters):
     train_op = optimizer.minimize(meta_loss)
     delta_f = meta_loss - f
     
+    # Initialization
     x_val = 100 * np.ones([1, n_dims], dtype='float32')
     env_val = np.zeros([1, N_HISTS, 3], dtype='float32')
     env_val[:,-1,:] = np.array([0.1, 0.1, 0])

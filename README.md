@@ -18,7 +18,7 @@ wherein the hyper-parameter `a` (momentum) and `b` (learning-rate) are fixed. Bu
 [Learning-to-learn](https://github.com/deepmind/learning-to-learn) (L2L) inspired this project. However, there are several considerations that motived me moving forward (or backward):
 
 1. Like `AdagradOptimizer` and its variations, L2L deviates the basic idea of gradient descent algorithm, that is, it is just along the inverse direction of gradients that the loss-function decreases fastest.
-1. L2L cannot be be trained while evaluating. This is essential since no optimization algorithm can evaluate sucessfully on all problems, cursed by the "no free lunch" theorem. An optimizer thus shall automatically adjust itself to fit its problem.
+1. L2L cannot be be trained while evaluating. This is essential since no optimization algorithm can evaluate sucessfully on all problems, cursed by the "no free lunch" theorem. An optimizer thus shall automatically adjust itself to fit its problem. (This is what we humen practically do. That is, I was coding when I was learning coding; and I keep learning coding while I am coding.)
 
 
 ### Algorithm
