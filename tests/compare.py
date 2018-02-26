@@ -6,21 +6,22 @@ import numpy as np
 import tensorflow as tf
 import time
 
-from raw_implement import make_f, n_dims, n_iters
+from raw_implement import make_loss_and_gradients, n_dims, n_iters
 
 tf.reset_default_graph()
 
 
 
-def main(make_f=make_f, n_dims=n_dims, n_iters=n_iters):
+def main(make_loss_and_gradients=make_loss_and_gradients,
+         n_dims=n_dims, n_iters=n_iters):
     
     init_x = 100*np.ones([1, n_dims])
     x = tf.Variable(init_x, dtype='float32')
-    f = make_f(x)
+    loss, gradients = make_loss_and_gradients(x)
     optimizer = tf.train.RMSPropOptimizer(0.01)
-    train_op = optimizer.minimize(f)
+    train_op = optimizer.minimize(loss)
     
-    tf.summary.scalar('meta-loss', f)
+    tf.summary.scalar('meta-loss', loss)
     summary_op = tf.summary.merge_all()
     
     init = tf.global_variables_initializer()
@@ -33,12 +34,12 @@ def main(make_f=make_f, n_dims=n_dims, n_iters=n_iters):
         time_start = time.time()
         
         for step in range(n_iters):
-            f_val, summary_val, _ = sess.run([f, summary_op, train_op])
-            print(step, f_val)
+            loss_val, summary_val, _ = sess.run([loss, summary_op, train_op])
+            print(step, loss_val)
             
             writer.add_summary(summary_val, step)
             
-            if f_val < 1e-3:
+            if loss_val < 1e-2:
                 break
             
         elapsed_time = time.time() - time_start
