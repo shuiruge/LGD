@@ -32,7 +32,6 @@ class BaseOptimizee(abc.ABC):
         pass
 
 
-
 class FineTuer(object):
 
   def __init__(self, optimizee, optimizer, variables, parameters,
@@ -58,17 +57,30 @@ class FineTuer(object):
       self.parameters = [
           tf.Variables(initial_value=_) for _ in parameters
       ]
+      self.loss, self.gradients = optimizee\
+          .make_loss_and_gradients(self.variables)
+      self.optimizer = optimizer(*parameters)
+      # XXX: notice that args in `tf.train.Optimizer.__init__()` will be
+      # converted to tensor by `tf.convert_to_tensor()` in its `_prepare()`.
+      # This may cause error, to be revealed.
 
 
-  def initialize(self, variables, parameters, name='Initialize'):
+  def reset(self, variables, parameters, name='Reset'):
+    """XXX"""
+
+    reset_ops = []
 
     with tf.name_scope(self.name):
 
       with tf.name_scope(name):
 
-        # ...
-        pass
+        for i, var in enumerate(self.variables):
+          reset_ops.append(var.assign(variables[i]))
 
+        for i, param in enumerate(self.parameters):
+          reset_ops.append(param.assign(parameters[i]))
+
+    return tf.group(reset_ops)
 
 
   def make_meta_loss(self, n_trials=10, name='MetaLoss'):
@@ -77,8 +89,31 @@ class FineTuer(object):
 
       with tf.name_scope(name):
 
-        meta_loss = 0.0
-        # ...
+        # `tf.train.Optimizer.apply_gradients()` only updates the
+        # `tf.Variable`s within its argument `grad_and_vars`
+        update_op = self.optimizer.apply_gradients(self.gradients)
+
+        def cond(trial, meta_loss):
+          return tf.less(trial, n_trials)
+
+        def body(trial, meta_loss):
+          # Ensure that `update_op` is called before adding `loss`
+          # to `meta_loss`
+          with tf.control_dependencies([update_op]):
+            return trial + 1, meta_loss + loss
+
+        _, meta_loss = tf.while_loop(cond, body, [0, 0.0])
+
+    return meta_loss
 
 
   def tune(self, name='TuneOp'):
+
+    with tf.name_scope(self.name):
+
+      with tf.name_scope(name)
+
+      tune_op = self.opt_for_tuner.minimize(
+          meta_loss, var_list=self.parameters)
+
+    return tune_op
