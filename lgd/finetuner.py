@@ -32,19 +32,21 @@ class BaseOptimizee(abc.ABC):
         pass
 
 
-class FineTuer(object):
+class FineTuner(object):
 
   def __init__(self, optimizee, optimizer, variables, parameters,
-               name='FineTuner'):
+               opt_for_tuner=None, name='FineTuner'):
     """Implements the fine-tuner by gradient descent.
 
     Args:
       optimizee: An instance of class inheriting the `BaseOptimizee`.
-      optimizer: An instance of class inheriting the `BaseOptimizer`.
+      optimizer: A class inheriting the `tf.train.Optimizer`.
       variables: list of tensors as the argument of the method
           `optimizee.make_loss_and_gradients`.
       parameters: list of tensors as the argument of the method
           `optimizer.update`.
+      opt_for_tuner: `None` or an instance of class inheriting the
+          `tf.train.Optimizer`, optional.
       name: string, optional.
     """
 
@@ -55,14 +57,22 @@ class FineTuer(object):
           tf.Variable(initial_value=_) for _ in variables
       ]
       self.parameters = [
-          tf.Variables(initial_value=_) for _ in parameters
+          tf.Variable(initial_value=_) for _ in parameters
       ]
       self.loss, self.gradients = optimizee\
-          .make_loss_and_gradients(self.variables)
-      self.optimizer = optimizer(*parameters)
+          .make_loss_and_gradients(*self.variables)
+      self.optimizer = optimizer(*self.parameters)
       # XXX: notice that args in `tf.train.Optimizer.__init__()` will be
       # converted to tensor by `tf.convert_to_tensor()` in its `_prepare()`.
       # This may cause error, to be revealed.
+
+      if opt_for_tuner is None:
+        self.opt_for_tuner = tf.train.AdamOptimizer(0.01)
+      else:
+        self.opt_for_tuner = opt_for_tuner
+
+      # Initialize
+      self.meta_loss = None
 
 
   def reset(self, variables, parameters, name='Reset'):
@@ -83,7 +93,7 @@ class FineTuer(object):
     return tf.group(reset_ops)
 
 
-  def make_meta_loss(self, n_trials=10, name='MetaLoss'):
+  def make_meta_loss(self, n_trials, name='MetaLoss'):
 
     with tf.name_scope(self.name):
 
@@ -107,13 +117,55 @@ class FineTuer(object):
     return meta_loss
 
 
-  def tune(self, name='TuneOp'):
+  def tune(self, n_trials=10, name='TuneOp'):
 
     with tf.name_scope(self.name):
 
-      with tf.name_scope(name)
+      self.meta_loss = self.make_meta_loss(n_trials)
 
-      tune_op = self.opt_for_tuner.minimize(
-          meta_loss, var_list=self.parameters)
+      with tf.name_scope(name):
+
+        tune_op = self.opt_for_tuner.minimize(
+            self.meta_loss, var_list=self.parameters)
 
     return tune_op
+
+
+
+if __name__ == '__main__':
+
+
+  class TestOptimizee(BaseOptimizee):
+
+    def make_loss_and_gradients(self, x):
+      loss = tf.square(x)
+      g = tf.gradients(loss, [x])
+      gradients = [(g, x)]
+      return loss, gradients
+
+  def test():
+    optimizee = TestOptimizee()
+    optimizer = tf.train.GradientDescentOptimizer
+    x = tf.Variable(initial_value=1000.0, dtype='float32')
+    lr = tf.Variable(initial_value=0.01, dtype='float32')
+    finetuner = FineTuner(optimizee=optimizee, optimizer=optimizer,
+                          variables=[x], parameters=[lr])
+
+    tune_op = finetuner.tune()
+
+    with tf.Session() as sess:
+
+      for i in range(10):
+
+        _, lr_val = sess.run([tune_op, lr])
+
+        print(lr_val)
+
+
+  test()
+
+
+
+
+
+      
